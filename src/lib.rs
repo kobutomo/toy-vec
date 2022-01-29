@@ -39,6 +39,17 @@ impl<T: Default> ToyVec<T> {
         }
     }
 
+    pub fn get_or<'a, 'b>(&'a self, index: usize, default: &'b T) -> &'a T
+    where
+        'b: 'a, // 'b は境界 'a を満たす（'b は 'a よりも長く生存する）
+    {
+        if index < self.len {
+            &self.elements[index]
+        } else {
+            default
+        }
+    }
+
     fn grow(&mut self) {}
 
     fn allocate_in_heap(size: usize) -> Box<[T]> {
