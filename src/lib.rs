@@ -50,12 +50,59 @@ impl<T: Default> ToyVec<T> {
         }
     }
 
-    fn grow(&mut self) {}
+    pub fn pop(&mut self) -> Option<T> {
+        if self.len == 0 {
+            None
+        } else {
+            self.len -= 1;
+            let elem = std::mem::replace(&mut self.elements[self.len], Default::default());
+            Some(elem)
+        }
+    }
+
+    fn grow(&mut self) {
+        if self.capacity() == 0 {
+            self.elements = Self::allocate_in_heap(1)
+        } else {
+            let new_elements = Self::allocate_in_heap(self.capacity() * 2);
+            let old_elements = std::mem::replace(&mut self.elements, new_elements);
+            for (i, e) in old_elements.into_vec().into_iter().enumerate() {
+                self.elements[i] = e;
+            }
+        }
+    }
 
     fn allocate_in_heap(size: usize) -> Box<[T]> {
         std::iter::repeat_with(Default::default)
             .take(size)
             .collect::<Vec<T>>()
             .into_boxed_slice()
+    }
+
+    pub fn iter<'vec>(&'vec self) -> Iter<'vec, T> {
+        Iter {
+            elements: &self.elements,
+            len: self.len,
+            pos: 0,
+        }
+    }
+}
+
+pub struct Iter<'vec, T> {
+    elements: &'vec Box<[T]>,
+    len: usize,
+    pos: usize,
+}
+
+impl<'vec, T> Iterator for Iter<'vec, T> {
+    type Item = &'vec T;
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.pos >= self.len {
+            None
+        } else {
+            let res = Some(&self.elements[self.pos]);
+            self.pos += 1;
+            res
+        }
     }
 }
